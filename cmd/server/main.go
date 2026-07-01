@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
+	"github.com/bootdotdev/learn-pub-sub-starter/internal/routing"
 	"github.com/joho/godotenv"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -23,6 +25,22 @@ func main() {
 	defer connection.Close()
 
 	fmt.Println("Connection to AMQP successful")
+
+	pubCh, err := connection.Channel()
+	if err != nil {
+		log.Fatalf("Failed to create pauseChan: %v", err)
+	}
+
+	err = pubsub.PublishJSON(
+		pubCh,
+		routing.ExchangePerilDirect,
+		routing.PauseKey,
+		routing.PlayingState{IsPaused: true},
+	)
+	if err != nil {
+		log.Fatalf("Failed to publish JSON: %v", err)
+	}
+	fmt.Println("successfully published pause message")
 
 	// wait for close signal
 	signalChan := make(chan os.Signal, 1)
